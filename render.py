@@ -55,6 +55,19 @@ STRAPLINE = ('COP31 overruns with no fossil-fuel deal · three missiles downed '
              'over Riyadh · a magnitude-6.7 quake shakes Peru · Zelensky: '
              'the Crimea bridge "will not stay"')
 
+# The day in UTC: (hour, minute, caption, side). Each tick's clock-and-caption
+# block is stacked either above or below the axis, alternating tick by tick so
+# that the five events crowded into the first six hours cannot collide.
+TICKS = [
+    (0, 9, 'Peru quake M 6.7 · USGS', 'up'),
+    (2, 15, 'Finland restricts Gulf airspace', 'down'),
+    (4, 0, 'Vegas: Verstappen P1', 'up'),
+    (5, 0, 'Tanker hit 11 nmi off Khasab · UKMTO', 'down'),
+    (5, 50, '2nd tanker 17 nmi east · UKMTO', 'up'),
+    (15, 30, 'Anatra: EU-CEPA pact signed', 'down'),
+    (17, 30, 'Newcastle: vASarell 2-2', 'up'),
+]
+
 # Stat band: value, caption ---------------------------------------------
 STATS = [
     ('3', 'ballistic missiles downed over Riyadh'),
@@ -90,15 +103,16 @@ LEADS = [
         chip='Plenary status',
     ),
     dict(
-        place='RIYADH · WAR',
-        kicker='3 MISSILES DOWNED',
-        prov='CONFIRMED',
-        head='Saudi air defences down three ballistic missiles over Riyadh',
-        body=('Downed before dawn Saturday, days after the PIF tower was hit '
-              'on Thursday. Houthis threaten Jeddah and Red Sea ports.'),
-        source='Al Jazeera, AFP, SPA',
-        scene='missiles',
-        chip='Sat before dawn',
+        place='HORMUZ · IRAN WAR',
+        kicker='GULF · IRAN WAR',
+        prov=(('CONFIRMED', TEAL), ('CLAIM', GOLD)),
+        head='Iran strikes Bahrain bases; tankers hit off Oman',
+        body=('IRGC says it hit US radars at two bases; Bahrain says a civilian '
+              'plant burned. UKMTO: two tankers struck off Khasab.'),
+        body_fill=MUTED,
+        source='UKMTO, IRIB, BNA',
+        scene='gulf',
+        chip='Gulf escalation',
     ),
     dict(
         place='JUNÍN, PERU · EARTHQUAKE',
@@ -130,10 +144,11 @@ FEATURES = [
          body=('Araghchi still sees a "fair solution" with Washington on '
                'the table.'),
          source='Iran newspaper, Reuters'),
-    dict(n='07', kicker='HORMUZ · WAR', prov='CLAIM', scene='drone',
-         head='Iran says it shot down a US drone',
-         body='IRGC names an MQ-9; Washington does not confirm it.',
-         source='IRIB, Tasnim'),
+    dict(n='07', kicker='RIYADH · WAR', prov='OFFICIAL', scene='riyadh',
+         head='Three ballistic missiles downed over Riyadh',
+         body=('Downed before dawn Saturday, days after the PIF tower was '
+               'hit.'),
+         source='Al Jazeera, AFP, SPA'),
     dict(n='08', kicker='WASHINGTON · TECH', prov='CONFIRMED', scene='scales',
          head='Trump vows a "tremendous tax" on data centres abroad',
          body=('US firms building AI data centres overseas would pay; no '
@@ -166,8 +181,35 @@ FEATURES = [
          source='F1.com, FIA'),
 ]
 
+# Big data callouts stamped into the top-right of each feature-card scene,
+# keyed by story number: (value, caption, colour).
+#
+# The figures are the ones this sheet itself verifies: the 58+ hurt above, the
+# 146 safe on the Davao flight, Rahul's 124*, the three missiles over Riyadh.
+# Eight stories from the brief (Gulf of Finland drones, robot arms, the cartel
+# capture, EU-Indonesia, Basra, Taiwan markets, the rugby score, the CAF vote,
+# Mastung) are not feature cards on this page, so their callouts have no card
+# to sit on; TAX and CORRECT are the quotable facts of cards 08 and 09.
+FEATURE_CALLOUTS = {
+    '04': ('FRI', 'INTERVIEW GIVEN', NAVY),
+    '05': ('58+', 'HURT IN STRIKE', RED),
+    '06': ('STAYS', 'URANIUM STOCK', NAVY),
+    '07': ('3', 'MISSILES DOWNED', RED),
+    '08': ('TAX', 'ON DATA CENTRES', NAVY),
+    '09': ('CORRECT', 'BEIJING TO TOKYO', NAVY),
+    '10': ('146', 'SAFE ON BOARD', NAVY),
+    '11': ('11', 'DAY TRIP ENDS', NAVY),
+    '12': ('124*', 'NOT OUT AT TEA', RED),
+    '13': ('P1', 'VERSTAPPEN · VEGAS', RED),
+}
+
 # Layout anchors ---------------------------------------------------------
-CARD_Y = 156
+# Timeline strip: sits between the masthead rule and the stat band.
+TL_Y, TL_H = 75, 34
+TL_AXIS_X, TL_AXIS_W = 52, 954   # 00:00 .. 23:59 spans the axis exactly
+TL_AXIS_DY = 16.5                # axis offset inside the strip
+
+CARD_Y = 160
 CARD_W = 322
 CARD_H = 177
 CARD_XS = (14, 351, 688)
@@ -402,6 +444,7 @@ def scene_close():
 # coordinates exactly where the reader sees them.
 SCENE_LABELS = []   # (text, x, y, w, h, size, kwargs)
 SCENE_PILLS = []    # (label, x, y, w, h, colour, size, region)
+SCENE_PLATES = []   # (x, y, w, h, fill, rx, opacity) in page coordinates
 
 
 def scene_label(s, x, y, w, h, size, **kw):
@@ -412,49 +455,155 @@ def scene_pill(label, x, y, w, h, color, size, region):
     SCENE_PILLS.append((label, x, y, w, h, color, size, region))
 
 
+def scene_plate(x, y, w, h, fill, rx=0, opacity=1.0):
+    """A rectangle in page coordinates, emitted after the scaled art group.
+
+    Scene art is drawn on a 196 x 52 canvas stretched to the band, so a rect
+    inside that group would scale non-uniformly and its corner radius would
+    shear. Anything that must stay pixel-exact is queued here instead.
+    """
+    SCENE_PLATES.append((x, y, w, h, fill, rx, opacity))
+
+
+def callout(x, y, w, h, value, caption, color):
+    """A small white card with a big bold figure and a tiny muted caption.
+
+    Drawn after the scene's scaled group closes, so both strings go through
+    block() in page coordinates and reserve real boxes. The card is opaque,
+    so whatever art sat under the corner is covered rather than showing
+    through; the coloured rule on its left edge ties it to the card accent.
+    """
+    add(rect(x, y, w, h, WHITE, 2))
+    add(rect(x, y, 2.4, h, color))
+    add(rect(x + 0.5, y + 0.5, w - 1, h - 1, 'none', 2, stroke='#cfc8b6', sw=0.6))
+    block(value, x + 6, y + 2.0, w - 10, 13.6, 10.5, minimum=7.5, bold=True,
+          serif=True, fill=color, region='callout')
+    block(caption, x + 6, y + 15.9, w - 10, 6.4, 5.0, minimum=4.0,
+          fill=MUTED, region='callout')
+
+
 def scene_cop(x, y, w, h, region):
-    """Climate: teal globe with white meridians, a red thermometer, a clock."""
+    """Climate: teal globe with white meridians, a red thermometer, a clock,
+    and a 13-box calendar counter for the summit's 12 scheduled days plus one.
+
+    The globe, thermometer and clock are packed into the left 106 scene units
+    so the counter owns the right of the band. The counter is drawn as art in
+    scene units, but its numerals and captions are queued in page coordinates
+    through scene_label() so block() measures and reserves them like any other
+    text.
+    """
     add(rect(0, 0, SCENE_W, SCENE_H, '#dfe8e4'))
     # Globe
-    add(circle(64, 26, 23, TEAL))
-    add(path('M 41 26 H 87 M 64 3 Q 45 26 64 49 M 64 3 Q 83 26 64 49',
+    add(circle(40, 26, 20, TEAL))
+    add(path('M 20 26 H 60 M 40 6 Q 23 26 40 46 M 40 6 Q 57 26 40 46',
              stroke=WHITE, sw=0.9, extra='opacity=".75"'))
-    add(path('M 43 15 Q 64 21 85 15 M 43 37 Q 64 31 85 37',
+    add(path('M 22 16 Q 40 21 58 16 M 22 36 Q 40 31 58 36',
              stroke=WHITE, sw=0.7, extra='opacity=".6"'))
     # Thermometer
-    add(rect(112, 9, 6, 25, WHITE, 3))
-    add(rect(113.4, 19, 3.2, 16, RED, 1.6))
-    add(circle(115, 36, 5.5, RED))
-    add(line(115, 12, 115, 20, RED, 1.2))
+    add(rect(70, 9, 5.4, 23, WHITE, 3))
+    add(rect(71.3, 18, 2.8, 15, RED, 1.4))
+    add(circle(72.7, 34, 5, RED))
+    add(line(72.7, 12, 72.7, 19, RED, 1.1))
     # Clock
-    add(circle(136, 30, 12, WHITE, NAVY, 1.3))
-    add(line(136, 30, 136, 22, NAVY, 1.3))
-    add(line(136, 30, 142, 33.5, NAVY, 1.3))
-    add(circle(136, 30, 1.2, RED))
+    add(circle(92, 30, 10, WHITE, NAVY, 1.3))
+    add(line(92, 30, 92, 23, NAVY, 1.3))
+    add(line(92, 30, 97, 33.5, NAVY, 1.3))
+    add(circle(92, 30, 1.2, RED))
     for tick in range(12):
         a = tick * math.pi / 6
-        add(circle(136 + 9.7 * math.sin(a), 30 - 9.7 * math.cos(a), 0.45, NAVY))
-    # Red "OVERTIME" chip, top right, tucked inside the scene band
-    scene_pill('OVERTIME', x + w - 74, y + 5, 66, 13, RED, 7, region)
+        add(circle(92 + 8 * math.sin(a), 30 - 8 * math.cos(a), 0.45, NAVY))
+    # The day counter: thirteen calendars, 9..21. Twelve were scheduled; the
+    # thirteenth, in red, is the overtime Saturday the summit ran into.
+    # Everything is laid out in page units and queued, so the boxes stay
+    # square-ish and the numerals sit on whole pixels.
+    bw_p, bh_p, gap_p = 8.4, 11.0, 0.55      # page units
+    left_p, top_p = x + 178, y + 11.0
+    grey, grey_ink = '#b7b0a0', '#3b372e'
+    for k, day in enumerate(range(9, 22)):
+        bx = left_p + k * (bw_p + gap_p)
+        hot = day == 21
+        scene_plate(bx, top_p, bw_p, bh_p, RED if hot else grey, 1.2)
+        scene_label(str(day), bx, top_p + 2.7, bw_p, 6.0, 4.4,
+                    bold=True, fill=WHITE if hot else grey_ink, center=True)
+    # Under the strip: the key on the left, the overtime pill on the right,
+    # then the one-line caption that explains both.
+    base = top_p + 12.6
+    scene_label('SCHEDULED DAYS', left_p + 0.5, base, 60, 7.0, 4.5,
+                bold=True, fill=MUTED, tracking=0.2)
+    pill_x = left_p + 13 * (bw_p + gap_p) - 25
+    scene_plate(pill_x, base - 0.7, 25, 9.0, GOLD, 4.5)
+    scene_label('+1 DAY', pill_x, base + 0.2, 25, 7.2, 5.2,
+                bold=True, fill=NAVY, center=True)
+    scene_label('Day 13 of a 12-day summit', left_p + 0.5, base + 9.0,
+                132, 8.0, 5.4, fill=MUTED)
 
 
-def scene_missiles(x, y, w, h, region):
-    """War: night sky, three red arcs ending in gold bursts, city silhouette."""
-    add(rect(0, 0, SCENE_W, SCENE_H, 'url(#night)'))
-    for i, (sx, ex, apex) in enumerate(((6, 58, 30), (40, 96, 20), (74, 132, 34))):
-        add(path(f'M {sx} 50 Q {(sx + ex) / 2} {apex} {ex} 50',
-                 stroke='#ff6b5a', sw=2.8))
-        add(circle(ex - 3, 49, 3.4, GOLD))
-        add(circle(ex - 3, 49, 7.0, GOLD, opacity=0.4))
-        add(line(sx, 50, sx + 6, 47, '#ff6b5a', 1.6))
-    # City silhouette
-    for i, bh in enumerate((12, 17, 10, 20, 14, 23, 12, 18, 11, 16)):
-        bx = 4 + i * 9.5
-        add(rect(bx, 52 - bh, 7.5, bh, '#101a30'))
-    for i in range(7):
-        add(rect(6 + i * 13, 44 - (i % 3) * 3, 1.4, 2, GOLD, 0, 0.75))
-    scene_label('3 DOWNED', x + w - 62, y + 4, 58, 12, 9,
-                bold=True, fill=GOLD)
+def scene_gulf(x, y, w, h, region):
+    """Iran war: night water, a muted-teal Hormuz strait, red strikes.
+
+    Geometry is drawn in the 196 x 52 scene canvas. All label ink stays above
+    scene y=41: the caption and provenance pills cover the band below that.
+    Labels are queued in page coordinates so block() measures and
+    collision-checks them exactly where the reader sees them.
+
+    Reading left to right: Bahrain (the red starburst) in the lower left,
+    the Iranian coast and the IRAN label across the top right, the KHASAB
+    point below it, and the two burning tankers out in the channel.
+    """
+    add(rect(0, 0, SCENE_W, SCENE_H, '#0d1b2e'))
+    # Water texture: pale wave rules across the open Gulf.
+    for wy, x1, x2 in ((31, 4, 66), (41, 2, 56), (48, 16, 88)):
+        add(path(f'M {x1} {wy} q 9 -2 18 0 t 18 0 t 18 0 t 18 0',
+                 stroke='#24405c', sw=0.7))
+    # The Iranian coast fills the top-right, so the IRAN label sits on land.
+    add(path('M 54 0 L 196 0 L 196 16 Q 172 14 152 16 Q 126 19 106 13 '
+             'Q 82 8 54 0 Z', fill='#31465e', stroke='#48607a', sw=0.6))
+    # The Arabian shore runs along the bottom left, under Bahrain.
+    add(path('M 0 40 L 104 40 Q 84 46 56 48 Q 26 51 0 52 Z',
+             fill='#31465e', stroke='#48607a', sw=0.6))
+    # The strait: a broad muted-teal channel between the two coasts.
+    strait = ('M 0 28 Q 34 25 62 28 Q 96 31 124 25 Q 150 19 176 21 '
+              'Q 186 22 196 19 L 196 30 Q 180 32 170 30 Q 146 28 124 34 '
+              'Q 96 41 62 38 Q 34 36 0 38 Z')
+    add(path(strait, fill=TEAL, stroke='none', extra='opacity=".62"'))
+    add(path('M 0 28 Q 34 25 62 28 Q 96 31 124 25 Q 150 19 176 21 Q 186 22 196 19',
+             stroke='#9ccdd0', sw=0.55, extra='opacity=".6"'))
+    # Bahrain: a small island with a red starburst over it.
+    add('<ellipse cx="58" cy="40" rx="11" ry="4" fill="#3b5069"/>')
+    add(circle(58, 39, 1.9, RED))
+    for k in range(8):
+        a = k * math.pi / 4
+        add(line(58 + 2.3 * math.cos(a), 39 + 2.3 * math.sin(a),
+                 58 + 6.8 * math.cos(a), 39 + 6.8 * math.sin(a),
+                 '#ff6b5a', 1.1))
+    add(circle(58, 39, 9.0, RED, opacity=0.22))
+    # Khasab point on the Iranian side of the strait.
+    add(circle(114, 17, 1.9, WHITE))
+    add(circle(114, 17, 4.0, WHITE, opacity=0.18))
+    # Two burning tankers east of Khasab, out in the channel.
+    for tx, ty in ((150, 28), (172, 24)):
+        add(f'<path d="M {tx - 7} {ty} L {tx + 7} {ty} L {tx + 4} {ty + 3.4} '
+            f'L {tx - 4} {ty + 3.4} Z" fill="#516884" stroke="#a6bcd4" '
+            f'stroke-width="0.55"/>')
+        add(circle(tx, ty - 1.6, 1.9, GOLD))
+        add(circle(tx, ty - 1.6, 4.6, '#e28d44', opacity=0.5))
+        add(path(f'M {tx} {ty - 4} q 2 -3.4 0 -6', stroke='#d6c3a4',
+                 sw=0.75, extra='opacity=".75"'))
+    # Thin red dashed arcs from the IRAN label out to Bahrain and the two
+    # burning ships — the strike lines the story describes.
+    add(path('M 148 8 Q 108 22 68 33', stroke='#ff5a4a', sw=1.25,
+             extra='stroke-dasharray="3.4 2.4"'))
+    add(path('M 158 9 Q 154 19 150 24', stroke='#ff5a4a', sw=1.15,
+             extra='stroke-dasharray="3.4 2.4"'))
+    add(path('M 168 10 Q 170 16 172 20', stroke='#ff5a4a', sw=1.1,
+             extra='stroke-dasharray="3.4 2.4"'))
+    sx, sy = w / SCENE_W, h / SCENE_H
+    scene_label('IRAN', x + 150 * sx, y + 0.8 * sy, 30 * sx, 7.2 * sy, 6.6,
+                bold=True, fill='#ffd7d1', center=True)
+    scene_label('KHASAB', x + 88 * sx, y + 13.0 * sy, 30 * sx, 6.6 * sy, 5.4,
+                bold=True, fill=WHITE, center=True)
+    scene_label('BAHRAIN', x + 44 * sx, y + 35.0 * sy, 32 * sx, 6.6 * sy, 5.4,
+                bold=True, fill='#ffd7d1', center=True)
 
 
 def scene_quake(x, y, w, h, region):
@@ -480,22 +629,26 @@ def scene_quake(x, y, w, h, region):
 def scene(kind, x, y, w, h, region):
     SCENE_LABELS.clear()
     SCENE_PILLS.clear()
+    SCENE_PLATES.clear()
     scene_open(x, y, w, h)
     if kind == 'cop':
         scene_cop(x, y, w, h, region)
-    elif kind == 'missiles':
-        scene_missiles(x, y, w, h, region)
+    elif kind == 'gulf':
+        scene_gulf(x, y, w, h, region)
     elif kind == 'quake':
         scene_quake(x, y, w, h, region)
     else:
         raise AssertionError(f'unknown scene {kind!r}')
     scene_close()
+    for px, py, pw, ph, fill, rx, opacity in SCENE_PLATES:
+        add(rect(px, py, pw, ph, fill, rx, opacity))
     for label, px, py, pw, ph, color, size, reg in SCENE_PILLS:
         pill(label, px, py, pw, ph, color, size, reg)
     for s, lx, ly, lw, lh, size, kw in SCENE_LABELS:
         block(s, lx, ly, lw, lh, size, region=region, **kw)
     SCENE_LABELS.clear()
     SCENE_PILLS.clear()
+    SCENE_PLATES.clear()
 
 
 # --------------------------------------------------------------------------
@@ -505,14 +658,18 @@ def scene(kind, x, y, w, h, region):
 # like the rest of the page (and lands where the reader sees it).
 # --------------------------------------------------------------------------
 def sc_kyiv(x, y, w, h):
-    """Kyiv at night: skyline, gold windows, fire glow, red streaks."""
+    """Kyiv at night: skyline, gold windows, fire glow, red streaks.
+
+    The three right-hand blocks are kept to 22 scene units tall (top edge at
+    y=30) so the data callout in the band's top-right corner has clear sky.
+    """
     add(rect(0, 0, SCENE_W, SCENE_H, 'url(#night)'))
     add('<ellipse cx="104" cy="50" rx="58" ry="16" fill="url(#fire)"/>')
     for i, (bx, bw, bh) in enumerate((
             (0, 16, 26), (17, 12, 34), (30, 14, 22), (45, 11, 30),
             (57, 16, 40), (74, 12, 24), (87, 15, 33), (103, 12, 20),
-            (116, 16, 37), (133, 12, 26), (146, 14, 31), (161, 11, 22),
-            (173, 23, 29))):
+            (116, 16, 37), (133, 12, 22), (146, 14, 20), (161, 11, 22),
+            (173, 23, 20))):
         add(rect(bx, 52 - bh, bw, bh, '#0d1526'))
         cols = max(1, (bw - 4) // 5)
         rows = max(1, (bh - 6) // 7)
@@ -523,7 +680,6 @@ def sc_kyiv(x, y, w, h):
                              1.3, 1.8, GOLD, 0, 0.85))
     add(path('M 4 4 L 42 21', stroke='#d94f4f', sw=1.5))
     add(path('M 26 2 L 62 18', stroke='#d94f4f', sw=1.1))
-    add(path('M 150 6 L 186 22', stroke='#d94f4f', sw=1.2))
 
 
 def sc_bridge(x, y, w, h):
@@ -562,19 +718,42 @@ def sc_flags(x, y, w, h):
     add(circle(96, 37.5, 2.0, TEAL))
 
 
-def sc_drone(x, y, w, h):
-    """Hormuz: grey drone over a fire glow, gold dashed track."""
+def sc_riyadh(x, y, w, h):
+    """Riyadh: night sky over a skyline, three missile trails and intercepts."""
     add(rect(0, 0, SCENE_W, SCENE_H, 'url(#night)'))
-    add('<ellipse cx="100" cy="47" rx="46" ry="13" fill="url(#fire)" '
-        'stroke="#d9834a" stroke-width="2.4" opacity=".95"/>')
-    for dx, dy in ((-30, -12), (30, -12), (-30, 12), (30, 12)):
-        add(line(100, 21, 100 + dx, 21 + dy, '#9fb4d4', 1.7))
-        add(circle(100 + dx, 21 + dy, 2.6, '#7b879c'))
-    add(rect(76, 15, 48, 12, '#9fb4d4', 2))
-    add(circle(123, 21, 4.2, '#9fb4d4'))
-    add(rect(83, 18.2, 13, 5.6, '#7b879c', 1))
-    add(path('M 10 41 Q 58 6 132 27', stroke=GOLD, sw=1.2,
-             extra='stroke-dasharray="4 3"'))
+    # Skyline silhouette: low blocks and one tall tower. Everything sits
+    # below scene y=26 so the label band across the top is clear ink.
+    for bx, bw, bh in ((0, 15, 15), (16, 11, 22), (28, 13, 12), (42, 10, 18),
+                       (53, 14, 11), (68, 12, 20), (81, 9, 14), (91, 13, 9),
+                       (105, 11, 16), (117, 12, 10)):
+        add(rect(bx, 52 - bh, bw, bh, '#0c1526'))
+        if bh > 15:
+            add(rect(bx + bw / 2 - 1.2, 52 - bh - 3, 2.4, 3.4, '#0c1526'))
+    # A tapered tower for scale, with a single aircraft-warning light.
+    add('<path d="M 136 52 L 139 27 L 143 27 L 146 52 Z" fill="#0c1526"/>')
+    add(circle(141, 26.4, 0.9, RED))
+    for i in range(9):
+        add(rect(4 + i * 12.5, 46 - (i % 3) * 2.5, 1.3, 1.8, GOLD, 0, 0.6))
+    # Three thin trails rising from the horizon, each ending in a burst.
+    for sx, ex, ey, apex in ((56, 86, 22, 36), (72, 108, 17, 28),
+                             (88, 130, 22, 32)):
+        add(path(f'M {sx} 51 Q {(sx + ex) / 2} {apex} {ex} {ey}',
+                 stroke='#ff6b5a', sw=1.5))
+        add(circle(ex, ey, 2.2, GOLD))
+        add(circle(ex, ey, 4.6, GOLD, opacity=0.35))
+        add(circle(ex, ey, 7.2, GOLD, opacity=0.14))
+    # Three intercept bursts on a small white tally board, top-left. The
+    # board is pure art: the "3 MISSILES DOWNED" callout in the opposite
+    # corner already says it in words, so repeating text here would double
+    # the figure and crowd the band.
+    sx, sy = w / SCENE_W, h / SCENE_H
+    add(rect(8 * sx, 4 * sy, 30 * sx, 34 * sy, WHITE, 2))
+    add(rect(8 * sx, 4 * sy, 2.6 * sx, 34 * sy, RED))
+    for k in range(3):
+        cy = (11 + k * 9) * sy
+        add(circle(25 * sx, cy, 2.3 * sx, GOLD))
+        add(circle(25 * sx, cy, 4.6 * sx, GOLD, opacity=0.30))
+        add(circle(25 * sx, cy, 6.8 * sx, GOLD, opacity=0.12))
 
 
 def sc_scales(x, y, w, h):
@@ -662,33 +841,31 @@ def sc_cricket(x, y, w, h):
     add(circle(92, 33, 3.8, RED))
     add(circle(92, 33, 3.8, RED, stroke=WHITE, sw=0.6))
     add(path('M 88.6 31.6 Q 92 33.4 95.4 31.6', stroke='#f0c9c9', sw=0.6))
-    scene_label('124*', x + w - 70, y + 5, 64, 27, 21,
-                bold=True, serif=True, fill=RED)
 
 
 def sc_chart(x, y, w, h):
-    """Las Vegas: red slide on navy, with the low and the price called out.
-    The line and bars stay left of x=120 scene units so the label column on
-    the right is clear ink, not text laid over the plot."""
+    """Las Vegas: a lap-time trace falling to the best lap, on navy.
+
+    The plot fills the band. Its top-right corner is deliberately plain navy
+    for the data callout, and the only scene label sits top-left, in the
+    clear sky above the trace's first point.
+    """
     add(rect(0, 0, SCENE_W, SCENE_H, NAVY))
-    for i in range(12):
+    for i in range(14):
         bh = 6 + (i * 7) % 15
         add(rect(7 + i * 7.0, 51 - bh, 2.4, bh, '#33436d'))
-    pts = ((7, 10), (21, 14), (35, 12), (49, 20), (63, 18),
-           (77, 28), (91, 34), (104, 41))
+    pts = ((7, 16), (21, 20), (35, 17), (49, 25), (63, 22),
+           (77, 31), (91, 36), (104, 43))
     add(path('M ' + ' L '.join(f'{a} {b}' for a, b in pts),
              stroke='#d94f4f', sw=2.0))
     for a, b in pts:
         add(circle(a, b, 1.4, '#e8a5a5'))
-    add(line(118, 6, 118, 46, '#3d4d78', 0.8))
-    scene_label('2-YEAR LOW', x + w - 62, y + 7, 56, 10, 7.2,
-                bold=True, fill=WHITE)
-    scene_label('$55,122', x + w - 62, y + 20, 56, 16, 11.5,
-                bold=True, fill=GOLD)
+    scene_label('LAP TIMES', x + 7, y + 3.0, 78, 8.0, 6.4,
+                bold=True, fill='#8f9cbe')
 
 
 FEATURE_SCENES = {
-    'kyiv': sc_kyiv, 'bridge': sc_bridge, 'flags': sc_flags, 'drone': sc_drone,
+    'kyiv': sc_kyiv, 'bridge': sc_bridge, 'flags': sc_flags, 'riyadh': sc_riyadh,
     'scales': sc_scales, 'deal': sc_deal, 'jet': sc_jet, 'globe': sc_globe,
     'cricket': sc_cricket, 'chart': sc_chart,
 }
@@ -696,12 +873,16 @@ FEATURE_SCENES = {
 
 def feature_scene(kind, x, y, w, h, region):
     SCENE_LABELS.clear()
+    SCENE_PLATES.clear()
     scene_open(x, y, w, h)
     FEATURE_SCENES[kind](x, y, w, h)
     scene_close()
+    for px, py, pw, ph, fill, rx, opacity in SCENE_PLATES:
+        add(rect(px, py, pw, ph, fill, rx, opacity))
     for s, lx, ly, lw, lh, size, kw in SCENE_LABELS:
         block(s, lx, ly, lw, lh, size, region=region, **kw)
     SCENE_LABELS.clear()
+    SCENE_PLATES.clear()
 
 
 # --------------------------------------------------------------------------
@@ -709,30 +890,83 @@ def feature_scene(kind, x, y, w, h, region):
 # --------------------------------------------------------------------------
 def masthead():
     track = 0.45
-    block(MAST_LEFT, MARGIN, 3, 300, 10, 8, bold=True, region='mast-left',
+    block(MAST_LEFT, MARGIN, 1, 300, 9.5, 7.5, bold=True, region='mast-left',
           tracking=track)
     # Right-aligned by measurement: block() draws left-to-right from x.
-    right_w = measure(MAST_RIGHT, 8, tracking=track)
-    block(MAST_RIGHT, PAGE - MARGIN - right_w, 3, right_w, 10, 8,
+    right_w = measure(MAST_RIGHT, 7.5, tracking=track)
+    block(MAST_RIGHT, PAGE - MARGIN - right_w, 1, right_w, 9.5, 7.5,
           region='mast-right', tracking=track)
-    block(MAST_DATE, MARGIN, 14, PAGE - 2 * MARGIN, 65.5, 52, minimum=52,
+    block(MAST_DATE, MARGIN, 10.8, PAGE - 2 * MARGIN, 43, 34, minimum=34,
           bold=True, serif=True, center=True, region='mast-date')
-    block(STRAPLINE, MARGIN, 81, PAGE - 2 * MARGIN, 14.5, 11.5,
-          minimum=10.5, serif=True, italic=True, fill=RED, center=True,
+    block(STRAPLINE, MARGIN, 55.5, PAGE - 2 * MARGIN, 13.5, 10.5,
+          minimum=10, serif=True, italic=True, fill=RED, center=True,
           region='strapline')
-    add(line(MARGIN, 96.5, PAGE - MARGIN, 96.5, NAVY, 0.8))
+
+
+def timeline_strip():
+    """The day's seven dated beats on one linear 00:00-23:59 UTC axis.
+
+    Each tick carries a bold time beside the axis and a muted caption on the
+    far side, and the pair alternates sides tick by tick. Every caption box
+    runs only as far as the next tick on its own side, so the five events
+    crowded into the first six hours share the left end without colliding.
+    """
+    x0, w = MARGIN, PAGE - 2 * MARGIN
+    add(rect(x0, TL_Y, w, TL_H, BAND))
+    add(line(x0, TL_Y, x0 + w, TL_Y, NAVY, 0.7))
+    add(line(x0, TL_Y + TL_H, x0 + w, TL_Y + TL_H, NAVY, 0.7))
+    # Left-margin label, stacked over two lines clear of the first tick box.
+    block('THE DAY', x0 + 3, TL_Y + 8.2, 30, 7.75, 6.2, bold=True,
+          region='timeline')
+    block('IN UTC', x0 + 3, TL_Y + 16.2, 30, 7.75, 6.2, bold=True,
+          region='timeline')
+
+    axis_y = TL_Y + TL_AXIS_DY
+    add(line(TL_AXIS_X, axis_y, TL_AXIS_X + TL_AXIS_W, axis_y, NAVY, 0.7))
+    # A short end-cap makes the axis read as a measured scale, not a rule.
+    add(line(TL_AXIS_X + TL_AXIS_W, axis_y - 2.4,
+             TL_AXIS_X + TL_AXIS_W, axis_y + 2.4, NAVY, 0.7))
+
+    marks = [(TL_AXIS_X + (hh * 60 + mm) / 1439 * TL_AXIS_W,
+              f'{hh:02d}:{mm:02d}', caption, side)
+             for hh, mm, caption, side in TICKS]
+
+    # A tick's label block is stacked either above or below the axis, with
+    # the bold clock nearest the line and the muted caption beyond it; the
+    # side alternates tick by tick. Each block runs rightwards from its dot
+    # and stops short of the next tick on its own side, so the five events
+    # crowded into the first six hours cannot collide.
+    for i, (px, clock, caption, side) in enumerate(marks):
+        add(circle(px, axis_y, 1.7, NAVY))
+        add(circle(px, axis_y, 2.9, NAVY, opacity=0.13))
+        peers = sorted(m[0] for m in marks if m[3] == side)
+        k = peers.index(px)
+        stop = (TL_AXIS_X + TL_AXIS_W if k == len(peers) - 1
+                else peers[k + 1] - 2.5)
+        left = px + 1.6
+        cw = stop - left
+        if side == 'up':
+            block(caption, left, TL_Y + 0.9, cw, 6.6, 5.2, fill=MUTED,
+                  region='timeline')
+            block(clock, left, TL_Y + 7.5, cw, 7.0, 5.6, bold=True,
+                  region='timeline')
+        else:
+            block(clock, left, axis_y + 1.4, cw, 7.0, 5.6, bold=True,
+                  region='timeline')
+            block(caption, left, axis_y + 8.9, cw, 6.6, 5.2, fill=MUTED,
+                  region='timeline')
 
 
 def stat_band():
-    add(rect(MARGIN, 99, PAGE - 2 * MARGIN, 32, BAND, 4))
+    add(rect(MARGIN, 111.5, PAGE - 2 * MARGIN, 28, BAND, 4))
     cell_w = (PAGE - 2 * MARGIN) / len(STATS)
     for i, (value, caption) in enumerate(STATS):
         x = MARGIN + i * cell_w
         if i:
-            add(line(x, 104, x, 126, '#d6cdb8', 0.8))
-        block(value, x + 4, 99.5, cell_w - 8, 21.5, 17, minimum=14,
+            add(line(x, 115, x, 136, '#d6cdb8', 0.8))
+        block(value, x + 4, 111.8, cell_w - 8, 18.5, 15.5, minimum=13,
               bold=True, fill=RED, center=True, region='stats')
-        block(caption, x + 5, 121.2, cell_w - 10, 9, 7.2, minimum=6.5,
+        block(caption, x + 5, 130.6, cell_w - 10, 8.2, 6.9, minimum=6.2,
               center=True, fill=NAVY, region='stats')
 
 
@@ -740,7 +974,7 @@ def region_pills():
     gap = 8
     w = (PAGE - 2 * MARGIN - gap * (len(REGION_PILLS) - 1)) / len(REGION_PILLS)
     for i, (label, color) in enumerate(REGION_PILLS):
-        pill(label, MARGIN + i * (w + gap), 134, w, 15, color, 7.2,
+        pill(label, MARGIN + i * (w + gap), 141.5, w, 13.5, color, 7.2,
              region='regions')
 
 
@@ -754,10 +988,19 @@ def lead_cards():
         add(f'<g clip-path="url(#clip-lead-{i + 1})">')
         scene(lead['scene'], x, y, CARD_W, 69, r)
         add('</g>')
-        # Caption + provenance chips on the seam
+        # Caption + provenance chips on the seam. A lead may carry one pill
+        # or a pair (its confirmed fact plus the claim it is reporting).
         pill(lead['chip'], x + 8, y + 57, 104, 14, NAVY, 7.5, r)
-        pill(lead['prov'], x + 118, y + 57, 88, 14,
-             PROV_COLORS[lead['prov']], 7.5, r)
+        prov = lead['prov']
+        if isinstance(prov, str):
+            prov = ((prov, PROV_COLORS[prov], 88, 7.5),)
+        else:
+            prov = tuple((label, color, max(30, 8 + measure(label, 7.2, True)),
+                          7.2) for label, color in prov)
+        px = x + 118
+        for label, color, pw, psize in prov:
+            pill(label, px, y + 57, pw, 14, color, psize, r)
+            px += pw + 4
         # Place line, numbered
         number(i + 1, x + 17, y + 83, r)
         block(lead['place'], x + 30, y + 78, 282, 10, 8, bold=True,
@@ -767,7 +1010,8 @@ def lead_cards():
         block(lead['head'], x + 10, y + 108, CARD_W - 20, 35, 14,
               minimum=12.5, bold=True, serif=True, lines=2, region=r)
         block(lead['body'], x + 10, y + 145, CARD_W - 20, 21, 8.25,
-              minimum=7.5, lines=2, region=r)
+              minimum=7.5, lines=2, fill=lead.get('body_fill', NAVY),
+              region=r)
         block('(' + lead['source'] + ')', x + 10, y + 166,
               CARD_W - 20, 9.5, 7.2, italic=True, fill=MUTED, region=r)
 
@@ -792,6 +1036,16 @@ def feature_cards():
         add(f'<g clip-path="url(#clip-{r})">')
         feature_scene(feat['scene'], x, y, FEAT_W, FEAT_SCENE_H, r)
         add('</g>')
+        # Big data callout, top-right of the scene band. Width follows the
+        # measured figure so the number is never clipped.
+        data = FEATURE_CALLOUTS.get(feat['n'])
+        if data:
+            value, caption, color = data
+            cw = max(measure(value, 10.5, True, serif=True),
+                     measure(caption, 5.0, True),
+                     measure(value, 7.5, True, serif=True)) + 17
+            callout(x + FEAT_W - 7 - cw, y + 5, cw, 22,
+                    value, caption, color)
         # Kicker pill straddling the scene seam: number, then the label.
         # A CLAIM is called out in red, with a paler numeral for contrast.
         kick_w = 62 + measure(feat['kicker'], 7, True)
@@ -816,6 +1070,31 @@ def feature_cards():
     add('</g>')
 
 
+# Provenance key, set as one line of fine print directly under DATE CHECK.
+CHECKED_LABEL = 'HOW WE CHECKED'
+CHECKED_TEXT = (
+    'CONFIRMED = 2+ official sources · OFFICIAL = on the record officials · '
+    'REPORTED = one major outlet · CLAIM = unverified party claim. '
+    'Corrections: none; figures verified against agency copy '
+    '(USGS 108 km depth, UKMTO distances as reported).')
+
+
+def how_we_checked():
+    """One muted line of fine print in the DATE CHECK band's lower padding.
+
+    The band itself is owned by map_briefs; this only inks text inside the
+    space it leaves, so nothing has to move. block(lines=1) guarantees a
+    single row: if the copy ever outgrows the width it is ellipsised rather
+    than wrapped, which is what keeps this a one-line strip.
+    """
+    y, size = 961.4, 6.2
+    label_w = measure(CHECKED_LABEL, size, True)
+    block(CHECKED_LABEL, 112, y, label_w + 0.5, 7.9, size, bold=True,
+          fill=NAVY, region='checked')
+    block(CHECKED_TEXT, 112 + label_w + 6, y, 884 - label_w - 6, 7.9, size,
+          minimum=5.0, lines=1, fill=MUTED, region='checked')
+
+
 def build():
     """Assemble the whole page. Later phases append sections before the
     closing tag; the order of calls is the order of the page."""
@@ -835,6 +1114,7 @@ def build():
     add(rect(0, 0, PAGE, PAGE, PAPER))
 
     masthead()
+    timeline_strip()
     stat_band()
     region_pills()
     lead_cards()
@@ -844,6 +1124,7 @@ def build():
 
     import map_briefs
     map_briefs.wire()
+    how_we_checked()
 
     add('</g></svg>')
     verify()

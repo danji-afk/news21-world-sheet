@@ -22,55 +22,64 @@ for (labels inside the panel, no two labels overlapping) on every run.
 import math
 
 # --------------------------------------------------------------------------
-# Briefs: story number, place, one-line story, source
+# Briefs: story number, place, one-line story, source, provenance
+#
+# Stories 1-13 are the three leads and ten feature cards, which render.py
+# draws; these 23 are the "also on Saturday" list behind the map pins.
+# Two old briefs are gone: the Riyadh missiles brief, promoted to feature 07,
+# and the Gaza food-truck brief, replaced by the drone strike on the aid van.
+# The cartel capture is *not* a feature card on this page, so it stays.
+#
+# Provenance vocabulary matches render.py: CONFIRMED = 2+ outlets,
+# OFFICIAL = on the record, REPORTED = one major outlet, CLAIM = one side.
 # --------------------------------------------------------------------------
 BRIEFS = [
-    (14, 'COPENHAGEN', "Denmark expels Russia's defence attaché over a "
-                       "thwarted killing plot.", 'AP, BBC'),
-    (15, 'EU · COP31', 'EU warns the draft risks turning COP31 into a '
-                       '"fossil summit".', 'AFP, Euronews'),
-    (16, 'PANAMA', 'Minister threatens to block any COP31 text without '
-                   'fossil-fuel language.', 'UN News'),
-    (17, 'JAKARTA', "Indonesia's PLN signs six clean-power purchase "
-                    'agreements.', 'Antara'),
-    (18, 'SAUDI ARABIA', 'Houthis threaten Jeddah and all Saudi Red Sea '
-                         'ports.', 'Al Jazeera'),
-    (19, 'WASHINGTON', 'Vance says the February Iran strikes were "Trump\'s '
-                       'call".', 'Reuters'),
-    (20, 'GULF OF FINLAND', 'Cargo ship ablaze after a drone strike; crew '
-                            'evacuates.', 'Reuters'),
-    (21, 'COLOMBIA', '"El Chapo Isidro" captured; 11 die in the operation.',
-     'AP'),
-    (22, 'GAZA', 'Strike on a food truck kills three; aid convoys pause.',
-     'Al Jazeera'),
-    (23, 'BRUSSELS', 'EU and Indonesia seal a long-negotiated trade deal.',
-     'EU Council'),
-    (24, 'JEFFERSON CITY', "Missouri judge approves Bayer's $7.25bn Roundup "
-                           'settlement.', 'AFP, AP'),
-    (25, 'ST. LOUIS', 'Jury hands Bayer a defence win in a weedkiller cancer '
-                      'trial.', 'AP'),
-    (26, 'SEJONG', 'Five cars of a freight train derail; no one is hurt.',
-     'Yonhap'),
-    (27, 'TAIPEI', 'Legislative Yuan passes the NT$20,000 universal cash '
-                   'payout.', 'Taipei Times'),
-    (28, 'NEW DELHI', 'Pakistan minister joins an SCO forum — first visit '
-                      'since 2023.', 'Dawn'),
-    (29, 'ODISHA', "Cyclone Akvan's remnants move inland; rain alerts "
-                   'continue.', 'IMD'),
-    (30, 'THE HAGUE', "Rights groups urge sanctions after the ICJ's Rohingya "
-                      'genocide finding.', 'AP'),
-    (31, 'PYONGYANG', 'Kim tours teaching-aid factory construction sites.',
-     'KCNA'),
-    (32, 'TOKYO', "Takaichi's approval holds above 70% for a third month.",
-     'Nikkei'),
-    (33, 'BANGKOK', 'Flood alert along the Chao Phraya and Noi rivers.',
-     'The Nation'),
-    (34, 'PORT LOUIS', 'AU roundtable on African risk financing and the risk '
-                       'premium.', 'Al Jazeera'),
-    (35, 'MELBOURNE', 'One dead, three teens arrested after city stabbings.',
-     'ABC'),
-    (36, 'SAN FRANCISCO', 'S&P and Nasdaq slide further as the AI rout '
-                          'deepens.', 'Reuters'),
+    (14, 'GAZA CITY', 'Drone strike on a food-aid van kills three.',
+     'Al Jazeera', 'REPORTED'),
+    (15, 'HORMUZ', 'IRGC says it downed a US MQ-9; Washington does not '
+                   'comment.', 'Reuters', 'CLAIM'),
+    (16, 'TEHRAN', 'Iran recalls 168 killed in the US strike on a school.',
+     'Anadolu', 'CLAIM'),
+    (17, 'PARIS', '68,500 stolen or forged luxury goods; Christian Dior bags '
+                  'most cited.', 'Reuters', 'OFFICIAL'),
+    (18, 'ZURICH', 'Spain and the Netherlands win the ccTLD arbitration vote.',
+     'NZZ', 'OFFICIAL'),
+    (19, 'PAS-DE-CALAIS', 'Floods swamp 395 homes; 65 roads shut.',
+     'Anadolu', 'REPORTED'),
+    (20, 'NEWCASTLE', 'Anatra held to 2-2; Chelsea lose 1-4 to Leeds.',
+     'Al Jazeera', 'REPORTED'),
+    (21, 'DUBLIN', 'Ireland edge South Africa 20-17 in rugby.',
+     'AFP', 'REPORTED'),
+    (22, 'MONTEREY', 'More arrests in the Nobel FBI database breach.',
+     'NEB', 'OFFICIAL'),
+    (23, 'CLEVELAND', 'Harden passes Bryant on the NBA 30-point list.',
+     'AF', 'REPORTED'),
+    (24, 'MELBOURNE', 'Australia beat England by 3 wickets in the T20.',
+     'AFP', 'REPORTED'),
+    (25, 'DOHA', 'Cameroon lose their U17 World Cup opener 2-1.',
+     'Africanews', 'REPORTED'),
+    (26, 'MORONI', 'Assogene Sadio loses his presidential security job.',
+     'Anadolu', 'OFFICIAL'),
+    (27, 'ST ELIAS', 'Canada: 700,000 doses expiring shortly.',
+     'Globe and Mail', 'REPORTED'),
+    (28, 'DHAKA', 'Five more deaths with measles symptoms.',
+     'Daily Star', 'REPORTED'),
+    (29, 'NEW DELHI', 'Congress vows more protests against Modi.',
+     'Deccan', 'OFFICIAL'),
+    (30, 'SYDNEY', 'Pakistani minister calls climate change an "emergency" at '
+                   'the SCG forum.', 'SCG', 'REPORTED'),
+    (31, 'KATHMANDU', 'Shell infighting; 26 days of protests paralysed '
+                      'business.', 'KTM Post', 'REPORTED'),
+    (32, 'FUKUSHIMA', 'Snow strands travellers; ~700 homes lose power.',
+     'Kyodo', 'OFFICIAL'),
+    (33, 'BALI', 'Russian Interpol fugitive refused entry.',
+     'Antara', 'OFFICIAL'),
+    (34, 'SINALOA', '"El Chapo Isidro" captured; 11 die in the operation.',
+     'AP', 'CONFIRMED'),
+    (35, 'GULF OF FINLAND', 'Cargo ship ablaze after a drone strike; crew '
+                            'evacuates.', 'AP, DW', 'CONFIRMED'),
+    (36, 'BRUSSELS', 'EU and Indonesia seal a long-negotiated trade deal.',
+     'EU Council', 'CONFIRMED'),
 ]
 
 # --------------------------------------------------------------------------
@@ -96,46 +105,49 @@ def project(lon, lat):
 #
 # The offsets were solved so every 13-pixel label circle sits wholly inside
 # the panel and no two labels overlap, while each leader stays short enough
-# to read as a leader rather than a stray mark. Pins 19/25 and 23/30 share
-# a true point by design (two St Louis stories, two Hague stories) and their
-# labels are pulled to opposite sides.
+# to read as a leader rather than a stray mark. Two pairs share a true
+# point by design — the Gulf lead and its brief (2/15), the Tehran feature
+# and its brief (6/16) — and their labels are pulled to opposite sides.
+#
+# Every point was checked against the CONTINENTS outlines above (point in
+# polygon), so no pin floats in open water.
 # --------------------------------------------------------------------------
 PINS = [
-    (1, 30.7, 36.9, 12.6, 5.1),        # Antalya
-    (2, 46.7, 24.5, -4.8, 14.1),       # Riyadh
-    (3, -76.2, -11.5, 5.9, -15.3),     # Junín, Peru
-    (4, 30.5, 50.4, 16.0, 8.5),        # Kyiv
-    (5, 33.4, 47.6, -8.2, -17.9),      # Kryvyi Rih
-    (6, 51.4, 35.7, 13.6, -0.5),       # Tehran
-    (7, 56.3, 26.6, -14.7, 3.6),       # Strait of Hormuz
-    (8, -77.0, 38.9, 9.4, -13.4),      # Washington
-    (9, 116.4, 39.9, 16.7, 8.2),       # Beijing
-    (10, 125.6, 7.1, -19.3, -3.4),     # Davao
-    (11, 149.1, -35.3, 8.9, -10.3),    # Canberra
-    (13, -115.1, 36.2, -2.5, 14.8),    # Las Vegas
-    (14, 12.6, 55.7, -16.0, -4.3),     # Copenhagen
-    (15, 4.4, 50.8, 8.0, 16.1),        # Brussels
-    (16, -79.5, 9.0, -16.0, 11.0),     # Panama City
-    (17, 106.8, -6.2, 6.8, -11.5),     # Jakarta
-    (18, 44.2, 15.3, 5.7, 14.3),       # Sanaa
-    (19, -90.2, 38.6, -9.5, 13.6),     # St Louis (first label)
-    (20, 25.0, 60.2, 15.6, -8.9),      # Gulf of Finland
-    (21, -74.1, 4.7, -11.0, 16.2),     # Colombia
-    (22, 34.5, 31.5, -0.8, -13.0),     # Gaza
-    (23, 4.3, 52.1, 14.3, 5.0),        # The Hague (first label)
-    (24, -92.2, 38.6, -11.2, -12.0),   # Jefferson City
-    (25, -90.2, 38.6, 5.5, -17.3),     # St Louis (second label)
-    (26, 127.3, 36.5, 9.7, 17.1),      # Sejong
-    (27, 121.5, 25.0, -7.1, -10.9),    # Taipei
-    (28, 77.2, 28.6, 13.7, -6.2),      # New Delhi
-    (29, 85.8, 20.3, -10.5, 12.8),     # Odisha
-    (30, 4.3, 52.1, 1.5, -17.8),       # The Hague (second label)
-    (31, 125.8, 39.0, -3.5, 19.0),     # Pyongyang
-    (32, 139.7, 35.7, -10.6, -8.3),    # Tokyo
-    (33, 100.5, 13.7, 3.2, -14.5),     # Bangkok
-    (34, 57.5, -20.2, -3.1, 16.1),     # Port Louis
-    (35, 144.9, -37.8, -11.6, -14.1),  # Melbourne
-    (36, -122.4, 37.8, 19.2, -0.6),    # San Francisco
+    (1, 30.7, 36.9, -7, 0),        # Antalya — COP31 lead
+    (2, 56.3, 26.6, 7, -1),        # Strait of Hormuz — Gulf lead
+    (3, -76.2, -11.5, 6, -4),      # Junín, Peru — quake lead
+    (4, 30.5, 50.4, 0, 7),         # Kyiv
+    (5, 33.4, 47.6, 1, -7),        # Kryvyi Rih
+    (6, 51.4, 35.7, -7, -2),       # Tehran — feature
+    (7, 46.7, 24.5, -2, 7),        # Riyadh — feature
+    (8, -77.0, 38.9, 7, 1),        # Washington — feature
+    (9, 116.4, 39.9, 5, -5),       # Beijing — feature
+    (10, 125.6, 7.1, -1, -7),      # Davao — feature
+    (11, 149.1, -35.3, -1, -7),    # Canberra — feature
+    (13, -115.1, 36.2, 7, 0),      # Las Vegas — feature
+    (14, 34.5, 31.5, -5, 5),       # Gaza
+    (15, 56.3, 26.6, 3, 12),       # Hormuz (brief, second label)
+    (16, 51.4, 35.7, 7, 1),        # Tehran (brief, second label)
+    (17, 2.35, 48.86, 4, -6),      # Paris
+    (18, 8.54, 47.38, -3, 10),     # Zurich
+    (19, 2.4, 50.9, -5, 5),        # Pas-de-Calais
+    (20, -1.61, 54.97, 5, -7),     # Newcastle
+    (21, -6.26, 53.35, -5, -5),    # Dublin
+    (22, -121.4, 36.5, -7, -1),    # Monterey
+    (23, -81.7, 41.5, -7, 0),      # Cleveland
+    (24, 144.9, -37.8, -7, 1),     # Melbourne
+    (25, 51.5, 25.3, -6, -4),      # Doha
+    (26, 43.3, -11.7, 5, -5),      # Moroni
+    (27, -138.9, 60.5, -7, 0),     # St Elias, Alaska
+    (28, 90.4, 23.8, -5, 5),       # Dhaka
+    (29, 77.2, 28.6, 1, -7),       # New Delhi
+    (30, 150.9, -33.8, 5, 5),      # Sydney (SCG forum)
+    (31, 85.3, 27.7, 7, 0),        # Kathmandu
+    (32, 140.5, 37.6, 1, -7),      # Fukushima
+    (33, 115.2, -8.4, -7, -1),     # Bali
+    (34, -107.4, 24.8, 5, -5),     # Sinaloa (Chapo Isidro)
+    (35, 25.0, 60.2, 0, -7),       # Gulf of Finland
+    (36, 4.4, 50.8, 7, 6),         # Brussels
 ]
 
 # --------------------------------------------------------------------------
@@ -188,17 +200,51 @@ CONTINENTS = [
     # Madagascar
     [(49, -12), (50, -17), (47, -25), (44, -25), (43, -20), (44, -15),
      (46, -12)],
-    # Japan: Honshu, Kyushu and the southern tip of Hokkaido in one arc
-    [(130, 31), (132, 33), (135, 34), (137, 37), (141, 41), (145, 44),
-     (143, 45), (140, 40), (136, 36), (133, 33), (131, 32)],
+    # Anatolia and the Levant: the Turkish plateau down the coast to Gaza,
+    # so the Antalya lead, the Gaza brief and the Iranian pins all sit on land
+    [(26.2, 40.4), (27.6, 37.2), (30.0, 36.1), (33.0, 35.9), (36.2, 36.0),
+     (38.6, 37.0), (40.9, 37.7), (41.7, 41.4), (36.0, 42.2), (30.0, 41.2),
+     (27.0, 41.2)],
+    [(33.9, 31.0), (34.9, 31.3), (35.3, 32.4), (36.0, 33.5), (36.4, 36.2),
+     (34.9, 36.5), (34.3, 33.0)],
+    # Britain and Ireland: the Newcastle and Dublin briefs
+    [(-5.2, 50.0), (-3.4, 50.3), (-0.9, 50.8), (1.4, 51.1), (1.7, 52.6),
+     (0.2, 53.5), (-1.4, 54.9), (-2.2, 56.9), (-3.9, 58.6), (-5.6, 58.5),
+     (-5.6, 56.0), (-4.9, 54.7), (-3.2, 54.1), (-3.3, 53.4), (-4.6, 53.3),
+     (-4.2, 52.5), (-5.2, 51.8), (-3.3, 51.4)],
+    [(-6.1, 52.1), (-6.1, 53.4), (-5.8, 54.5), (-6.4, 55.3), (-7.5, 55.4),
+     (-8.7, 55.2), (-10.1, 54.2), (-10.5, 53.2), (-10.0, 52.1), (-9.5, 51.5),
+     (-8.2, 51.6), (-6.7, 52.2)],
+    # Japan: Honshu, Kyushu and the southern tip of Hokkaido in one arc.
+    # Widened east of the old outline so the Fukushima brief has land.
+    [(130.0, 31.2), (131.0, 31.5), (131.9, 33.6), (133.0, 34.4),
+     (135.2, 35.5), (136.7, 37.3), (139.0, 38.0), (140.0, 39.5),
+     (141.0, 41.2), (142.5, 43.3), (145.5, 44.4), (143.6, 45.6),
+     (141.0, 42.0), (141.1, 40.5), (141.0, 38.4), (140.9, 37.0),
+     (140.4, 35.7), (139.8, 34.9), (138.8, 34.6), (137.0, 34.6),
+     (135.4, 33.6), (133.0, 33.4), (131.2, 33.0), (130.0, 32.0)],
+    # Taiwan: a sliver, so the Taipei pin is not in open water
+    [(119.9, 22.2), (121.0, 21.9), (121.9, 23.4), (121.9, 25.2),
+     (121.4, 25.3), (120.2, 23.3)],
+    # The Philippines: Luzon and Mindanao in one simplified silhouette
+    [(120.3, 18.6), (122.4, 18.6), (124.2, 13.2), (126.6, 9.6),
+     (126.2, 6.4), (124.2, 5.8), (121.9, 6.9), (119.8, 13.0), (119.6, 16.2)],
+    # Comoros and Mauritius: the Moroni and Port Louis pins
+    [(43.05, -11.4), (43.6, -11.5), (43.7, -12.1), (43.3, -12.5),
+     (42.95, -12.0), (42.9, -11.6)],
+    [(57.3, -19.9), (57.85, -19.95), (57.85, -20.4), (57.4, -20.55),
+     (57.3, -20.15)],
     # New Zealand
     [(173, -35), (175, -37), (178, -38), (176, -41), (173, -41),
      (171, -44), (167, -46), (168, -44), (172, -41), (173, -38),
      (172, -36)],
-    # Maritime Southeast Asia: Sumatra, Java, the Lesser Sundas and Sulawesi
-    [(95, 6), (100, 2), (104, -1), (108, -5), (113, -7), (118, -8),
-     (124, -8), (130, -7), (135, -4), (133, 0), (128, 1), (123, 1),
-     (119, 3), (114, 2), (110, 1), (106, 2), (102, 4), (98, 5)],
+    # Maritime Southeast Asia: Sumatra, Java, the Lesser Sundas and Sulawesi.
+    # The southern edge is carried east past Java so the Bali brief has land.
+    [(95, 6), (100, 2), (104, -1), (106.0, -6.3), (107.2, -7.5),
+     (110.0, -7.4), (112.5, -6.8), (114.2, -7.4), (114.4, -9.1),
+     (115.9, -9.1), (116.2, -8.0), (118, -8.0), (120, -8.2), (124, -8.2),
+     (130, -7), (135, -4), (133, 0), (128, 1), (123, 1), (119, 3),
+     (114, 2), (110, 1), (106, 2), (102, 4), (98, 5)],
 ]
 
 # Copy ---------------------------------------------------------------------
@@ -209,15 +255,22 @@ LEGEND = ['Numbered pins: the 23 brief stories · schematic map',
 INSET_PLACE = 'WELLINGTON'
 INSET_STORY = 'Cricket: Rahul 124* · India 344/2'
 DATE_PILL = 'DATE CHECK'
-DATE_TEXT = ('These happened earlier but were carried into Saturday: the Kryvyi '
-             'Rih strike (Friday evening) · Zelensky\'s interview was given '
-             'Friday · Peru\'s quake was 19:09 Friday local · Trump\'s '
-             'briefing, China\'s remarks to Japan, the Copenhagen expulsion, '
-             'Cyclone Akvan\'s landfall and Russell\'s session were all Friday.')
+# Date honesty, as two labelled lines: what happened on another day, and what
+# had not happened yet when the sheet went to press. Each label is set bold
+# on its own row; the body follows it on the same line.
+DATE_ROWS = [
+    ('Left out (other day):',
+     'Taiex -17.5% weekly fall (biggest weekly points fall on record) is over '
+     'Friday 20 November; Kryvyi Rih barrage and missiles in Poland were '
+     'Friday; Chapo Isidro was detained Friday night, reported Saturday.'),
+    ('Not yet (future):',
+     'COP31 approval session Sun 06:00 GMT; Las Vegas Grand Prix Sunday; '
+     'Nations Championship final next Sunday at Twickenham.'),
+]
 FOOTER = ('Every story happened, or was first reported, on Saturday 21 November '
           '2026 in some time zone. Claims are attributed, not stated as fact. '
-          'CONFIRMED = 2+ outlets · OFFICIAL = on record · CLAIM = one side. · '
-          'Original drawings. 2026-11-21')
+          'CONFIRMED = 2+ outlets · OFFICIAL = on record · REPORTED = one '
+          'outlet · CLAIM = one side · Original drawings. 2026-11-21')
 
 # Brief list geometry ------------------------------------------------------
 BRIEF_COLS = ((330, 12), (674, 11))   # (x, rows) for the two columns
@@ -272,9 +325,10 @@ def check_pins():
             assert not _overlap(boxes[a], boxes[b]), (
                 f'labels {a} and {b} overlap: {boxes[a]} vs {boxes[b]}')
 
-    # The two deliberately shared coordinates must be well separated.
-    for a, b in ((19, 25), (23, 30)):
-        pa, pb = PINS[a - 14][3:], PINS[b - 14][3:]
+    # The deliberately shared coordinates must be well separated.
+    by_n = {p[0]: p for p in PINS}
+    for a, b in ((2, 15), (6, 16)):
+        pa, pb = by_n[a][3:], by_n[b][3:]
         d = math.hypot(pa[0] - pb[0], pa[1] - pb[1])
         assert d >= 13.0, f'labels {a}/{b} share a point but sit {d:.1f}px apart'
 
@@ -283,7 +337,30 @@ def check_pins():
     assert sorted(n for n, *_ in PINS) == sorted([n for n in range(1, 37)
                                                   if n != 12]), \
         'pins must cover stories 1-36 except the Wellington inset (12)'
+    assert sorted(n for n, *_ in BRIEFS) == [n for n in range(14, 37)], \
+        'briefs must be exactly stories 14-36'
+    # Every brief has a pin of the same number, and vice versa.
+    assert {n for n, *_ in BRIEFS} == {n for n, *_ in PINS if n >= 14}, \
+        'briefs and pins disagree about stories 14-36'
+    # Each pin's true point must land on a landmass, not in open water.
+    for n, lon, lat, *_ in PINS:
+        assert any(_in_polygon(lon, lat, poly) for poly in CONTINENTS), (
+            f'pin {n} at ({lon}, {lat}) is in open water')
     return len(PINS)
+
+
+def _in_polygon(lon, lat, poly):
+    """Ray-casting point-in-polygon test in lon/lat space (pure python)."""
+    inside = False
+    n = len(poly)
+    for i in range(n):
+        x1, y1 = poly[i]
+        x2, y2 = poly[(i + 1) % n]
+        if (y1 > lat) != (y2 > lat):
+            x_at = x1 + (lat - y1) * (x2 - x1) / (y2 - y1)
+            if lon < x_at:
+                inside = not inside
+    return inside
 
 
 # --------------------------------------------------------------------------
@@ -365,26 +442,36 @@ def _legend(render):
 
 
 # --------------------------------------------------------------------------
-# The rich brief row: place (bold red), story (navy), source (italic muted)
+# The rich brief row: number disc, place (bold red), story (navy),
+# source and provenance (italic muted)
 # --------------------------------------------------------------------------
-def _row_runs(place, story, source):
-    """The row as a flat list of (text, size, bold, italic, fill) words.
+NUMBER_X = 9            # disc centre, measured from the row's left edge
+NUMBER_R = 5.2          # disc radius
+TEXT_X = 18             # first word, measured from the row's left edge
+TEXT_R = 4              # right pad, so a full line never touches the edge
+
+
+def _row_runs(place, story, source, prov):
+    """The row as a flat list of (text, size, bold, italic) words.
 
     Colour changes mid-line, so the row cannot go through render.block();
     it is laid out here as word runs and then reserved in render.PLACED as
     one box, which is what render.verify() checks at the end of the build.
+    The provenance word closes the row, in the same muted italic as the
+    source but bold, so it reads as a chip rather than more source text.
     """
     runs = [(w, PLACE_SIZE, True, False) for w in place.split()]
     runs += [(w, STORY_SIZE, False, False) for w in story.split()]
-    runs.append(('(' + source + ')', SOURCE_SIZE, False, True))
+    runs.append(('(' + source + ' ·', SOURCE_SIZE, False, True))
+    runs.append((prov + ')', SOURCE_SIZE, True, False))
     return runs
 
 
-def _row_lines(render, place, story, source, width):
+def _row_lines(render, place, story, source, prov, width):
     """Greedy word wrap across mixed styles, measured with render.measure."""
     lines, cur = [], []
     used = 0.0
-    for word, size, bold, italic in _row_runs(place, story, source):
+    for word, size, bold, italic in _row_runs(place, story, source, prov):
         w = render.measure(word, size, bold, italic=italic)
         gap = render.measure(' ', size, bold) if cur else 0.0
         if cur and used + gap + w > width:
@@ -398,30 +485,42 @@ def _row_lines(render, place, story, source, width):
     return lines
 
 
-def _brief_row(render, n, place, story, source, x, y):
-    """One alternating strip plus its rich text, reserved as a single box."""
+def _brief_row(render, n, place, story, source, prov, x, y):
+    """One alternating strip, its number disc, and its rich text.
+
+    The strip and the disc are drawn; the text is laid out word by word and
+    the whole row is reserved in render.PLACED as a single box, so the page
+    engine's collision sweep sees one brief, not a dozen loose words.
+    """
     h = BRIEF_ROW_H - 1.5
     if n % 2 == 0:
         render.add(render.rect(x, y, BRIEF_W, h, render.WHITE, 2))
     else:
         render.add(render.rect(x, y, BRIEF_W, h, '#eee9df', 2))
 
-    lines = _row_lines(render, place, story, source, BRIEF_W - 2 * BRIEF_PAD)
-    assert 1 <= len(lines) <= 2, (
-        f'brief {n} wraps to {len(lines)} lines at {BRIEF_W}px: {place!r}')
-    for _, used in lines:
-        assert used <= BRIEF_W - 2 * BRIEF_PAD + 0.01, (
-            f'brief {n} line overflows: {used:.1f}px')
+    # Number disc, vertically centred on the strip's first line.
+    render.number(n, x + NUMBER_X, y + 9.2, 'briefs-num', NUMBER_R)
 
-    box = (x, y, x + BRIEF_W, y + h)
+    width = BRIEF_W - TEXT_X - TEXT_R
+    lines = _row_lines(render, place, story, source, prov, width)
+    assert 1 <= len(lines) <= 2, (
+        f'brief {n} wraps to {len(lines)} lines at {width}px: {place!r}')
+    for _, used in lines:
+        assert used <= width + 0.01, (
+            f'brief {n} line overflows: {used:.1f}px of {width}px')
+
+    # The reservation covers the *text* area, not the whole strip: the number
+    # disc is reserved separately by render.number() a few lines above, and a
+    # box starting at x would swallow that disc and collide with itself.
+    box = (x + TEXT_X, y, x + BRIEF_W - TEXT_R, y + h)
     render.PLACED.append({'region': 'briefs', 'box': box,
-                          'text': f'{place} {story} ({source})',
+                          'text': f'{place} {story} ({source} · {prov})',
                           'size': STORY_SIZE, 'lines': len(lines)})
     for old in render.PLACED[:-1]:
         assert not render.intersects(box, old['box']), (
             f'brief {n} collides with a {old["region"]} box')
 
-    tx = x + BRIEF_PAD
+    tx = x + TEXT_X
     for i, (line, _) in enumerate(lines):
         base = y + 8.6 + i * 8.2
         cursor = tx
@@ -445,8 +544,8 @@ def _briefs(render):
     for ci, (x, rows) in enumerate(BRIEF_COLS):
         for r in range(rows):
             idx = r if ci == 0 else 12 + r
-            n, place, story, source = BRIEFS[idx]
-            _brief_row(render, n, place, story, source, x,
+            n, place, story, source, prov = BRIEFS[idx]
+            _brief_row(render, n, place, story, source, prov, x,
                        BRIEF_TOP + r * BRIEF_ROW_H)
 
 
@@ -454,11 +553,39 @@ def _briefs(render):
 # Date check and footer
 # --------------------------------------------------------------------------
 def _date_check(render):
+    """Two date-honesty rows, each a bold label and a run of muted facts.
+
+    The label is set on its own baseline so the two rows read as a small
+    table of contents for what the sheet left out and what it could not
+    yet know. Both rows are measured before they are drawn: the body column
+    starts where the widest label ends, so neither row can run under the
+    other's label.
+    """
     top, h = 933, 37
     render.add(render.rect(14, top, 996, h, '#eae2d3', 3))
     render.pill(DATE_PILL, 24, top + 9, 76, 15, render.RED, 7.5, 'date')
-    render.block(DATE_TEXT, 112, top + 5, 884, 27, 9, minimum=8, lines=2,
-                 region='date')
+
+    label_size = 8.0
+    label_w = max(render.measure(lbl, label_size, True)
+                  for lbl, _ in DATE_ROWS)
+    body_x = 112 + label_w + 4
+    body_w = 996 - 8 - body_x
+
+    # Both bodies share one size. The longest row decides it, so the two
+    # rows stay typographically identical instead of the long one shrinking
+    # on its own and leaving the short one a size larger.
+    body_size = 8.0
+    while (body_size > 7.2 and
+           max(render.measure(b, body_size) for _, b in DATE_ROWS) > body_w):
+        body_size = round(body_size - 0.1, 2)
+
+    for i, (label, body) in enumerate(DATE_ROWS):
+        y = top + 3.5 + i * 11.4
+        render.block(label, 112, y, label_w + 0.5, 10, label_size,
+                     bold=True, fill=render.RED, region='date-label')
+        render.block(body, body_x, y, body_w, 10, body_size,
+                     minimum=body_size, fill=render.MUTED,
+                     region='date-body')
 
 
 def _footer(render):
@@ -498,7 +625,7 @@ def wire(render_module=None):
 # Self-test: `python3 map_briefs.py`
 # --------------------------------------------------------------------------
 def _self_test():
-    """Three checks, one line each. Never writes entry.png."""
+    """Two checks, one line each. Never writes entry.png."""
     ok = True
 
     try:
@@ -509,39 +636,18 @@ def _self_test():
         ok = False
         print(f'pins FAILED: {exc}')
 
+    # render.build() now calls map_briefs.wire() itself, so building the page
+    # exercises this section in its real position and then verifies every
+    # reserved box. Calling wire() again here would place it twice.
     try:
-        import sys
-        render = sys.modules['__main__'] if hasattr(sys.modules.get('__main__'), 'block') else sys.modules['render']
-    except Exception as exc:                      # pragma: no cover
-        print(f'render import FAILED: {exc}')
-        return False
-
-    # Build a scratch page, then wire into the same state render.build() left
-    # behind. build() resets the engine, so this is exactly the position the
-    # real call will occupy: after every earlier section, before the close.
-    try:
+        import render
         svg = render.build()
-        before = len(render.PLACED)
-        wire()
-        added = len(render.PLACED) - before
-        print(f'wire ok: {added} boxes added after render.build() '
-              f'({len(render.PLACED)} total, {len(svg)} svg chars)')
-    except Exception as exc:
-        ok = False
-        print(f'wire FAILED: {type(exc).__name__}: {exc}')
-
-    # If render.build() has not yet grown its own wire() call, prove that
-    # wiring then closing the page still satisfies render.verify().
-    try:
-        render.build()
-        wire()
-        render.add('</g></svg>')
         render.verify()
-        print('verify ok: every reserved box on-page and non-overlapping '
-              f'({len(render.PLACED)} boxes)')
+        print(f'build ok: {len(render.PLACED)} boxes, none overlapping '
+              f'({len(svg)} svg chars)')
     except Exception as exc:
         ok = False
-        print(f'verify FAILED: {type(exc).__name__}: {exc}')
+        print(f'build FAILED: {type(exc).__name__}: {exc}')
 
     return ok
 
