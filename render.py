@@ -397,6 +397,21 @@ def scene_close():
     add('</g>')
 
 
+# Lead-scene labels are queued while the scaled art group is open and emitted
+# once it is closed, so they are measured, collision-checked and drawn in PAGE
+# coordinates exactly where the reader sees them.
+SCENE_LABELS = []   # (text, x, y, w, h, size, kwargs)
+SCENE_PILLS = []    # (label, x, y, w, h, colour, size, region)
+
+
+def scene_label(s, x, y, w, h, size, **kw):
+    SCENE_LABELS.append((s, x, y, w, h, size, kw))
+
+
+def scene_pill(label, x, y, w, h, color, size, region):
+    SCENE_PILLS.append((label, x, y, w, h, color, size, region))
+
+
 def scene_cop(x, y, w, h, region):
     """Climate: teal globe with white meridians, a red thermometer, a clock."""
     add(rect(0, 0, SCENE_W, SCENE_H, '#dfe8e4'))
@@ -419,8 +434,8 @@ def scene_cop(x, y, w, h, region):
     for tick in range(12):
         a = tick * math.pi / 6
         add(circle(136 + 9.7 * math.sin(a), 30 - 9.7 * math.cos(a), 0.45, NAVY))
-    # Red "OVERTIME" chip, top right
-    pill('OVERTIME', x + w * 0.755, y + 4, w * 0.205, 13, RED, 7, region)
+    # Red "OVERTIME" chip, top right, tucked inside the scene band
+    scene_pill('OVERTIME', x + w - 74, y + 5, 66, 13, RED, 7, region)
 
 
 def scene_missiles(x, y, w, h, region):
@@ -428,18 +443,18 @@ def scene_missiles(x, y, w, h, region):
     add(rect(0, 0, SCENE_W, SCENE_H, 'url(#night)'))
     for i, (sx, ex, apex) in enumerate(((6, 58, 30), (40, 96, 20), (74, 132, 34))):
         add(path(f'M {sx} 50 Q {(sx + ex) / 2} {apex} {ex} 50',
-                 stroke='#d94f4f', sw=1.8))
-        add(circle(ex - 3, 49, 2.6, GOLD))
-        add(circle(ex - 3, 49, 5.2, GOLD, opacity=0.35))
-        add(line(sx, 50, sx + 6, 47, '#d94f4f', 1.4))
+                 stroke='#ff6b5a', sw=2.8))
+        add(circle(ex - 3, 49, 3.4, GOLD))
+        add(circle(ex - 3, 49, 7.0, GOLD, opacity=0.4))
+        add(line(sx, 50, sx + 6, 47, '#ff6b5a', 1.6))
     # City silhouette
     for i, bh in enumerate((12, 17, 10, 20, 14, 23, 12, 18, 11, 16)):
         bx = 4 + i * 9.5
         add(rect(bx, 52 - bh, 7.5, bh, '#101a30'))
     for i in range(7):
         add(rect(6 + i * 13, 44 - (i % 3) * 3, 1.4, 2, GOLD, 0, 0.75))
-    block('3 DOWNED', x + w * 0.755, y + 6, w * 0.21, 12, 9,
-          bold=True, fill=GOLD, region=region)
+    scene_label('3 DOWNED', x + w - 62, y + 4, 58, 12, 9,
+                bold=True, fill=GOLD)
 
 
 def scene_quake(x, y, w, h, region):
@@ -453,13 +468,18 @@ def scene_quake(x, y, w, h, region):
     add(rect(112, 7, 76, 33, WHITE, 3))
     add(rect(112, 7, 3, 33, RED, 1))
     sx, sy = w / SCENE_W, h / SCENE_H
-    block('M 6.7', x + 119 * sx, y + 11 * sy, 64 * sx, 15 * sy, 12,
-          bold=True, fill=RED, region=region)
-    block('108 km deep', x + 119 * sx, y + 26 * sy, 64 * sx, 10 * sy, 7.5,
-          fill=MUTED, region=region)
+    # Centre the magnitude in the readout card (inner width 69 scene units).
+    scene_label('M 6.7', x + 115 * sx, y + 18 * sy, 70 * sx, 15 * sy, 12,
+                bold=True, fill=RED, center=True)
+    # Depth sits left of the readout card, in the clear sky above the flat
+    # tail of the trace (the spike ends at scene x=55).
+    scene_label('108 km deep', x + 58 * sx, y + 17 * sy, 52 * sx, 10 * sy,
+                7.5, bold=True, fill=MUTED)
 
 
 def scene(kind, x, y, w, h, region):
+    SCENE_LABELS.clear()
+    SCENE_PILLS.clear()
     scene_open(x, y, w, h)
     if kind == 'cop':
         scene_cop(x, y, w, h, region)
@@ -470,6 +490,12 @@ def scene(kind, x, y, w, h, region):
     else:
         raise AssertionError(f'unknown scene {kind!r}')
     scene_close()
+    for label, px, py, pw, ph, color, size, reg in SCENE_PILLS:
+        pill(label, px, py, pw, ph, color, size, reg)
+    for s, lx, ly, lw, lh, size, kw in SCENE_LABELS:
+        block(s, lx, ly, lw, lh, size, region=region, **kw)
+    SCENE_LABELS.clear()
+    SCENE_PILLS.clear()
 
 
 # --------------------------------------------------------------------------
@@ -478,13 +504,6 @@ def scene(kind, x, y, w, h, region):
 # group is closed, so every label is measured and collision-checked exactly
 # like the rest of the page (and lands where the reader sees it).
 # --------------------------------------------------------------------------
-SCENE_LABELS = []
-
-
-def scene_label(s, x, y, w, h, size, **kw):
-    SCENE_LABELS.append((s, x, y, w, h, size, kw))
-
-
 def sc_kyiv(x, y, w, h):
     """Kyiv at night: skyline, gold windows, fire glow, red streaks."""
     add(rect(0, 0, SCENE_W, SCENE_H, 'url(#night)'))
@@ -513,19 +532,19 @@ def sc_bridge(x, y, w, h):
     top of the scene is clear ink."""
     add(rect(0, 0, SCENE_W, SCENE_H, 'url(#night)'))
     add(rect(0, 44, SCENE_W, 8, '#0a1120'))
-    add(path('M 0 39 Q 98 31 196 39', stroke='#8b98b0', sw=2.2))
+    add(path('M 0 39 Q 98 31 196 39', stroke='#8fa2c9', sw=4.6))
     for tx in (46, 150):
-        add(line(tx, 17, tx, 46, '#8b98b0', 2.4))
-        add(line(tx - 6, 23, tx + 6, 23, '#8b98b0', 1.4))
+        add(line(tx, 17, tx, 46, '#8fa2c9', 4.6))
+        add(line(tx - 7, 23, tx + 7, 23, '#8fa2c9', 3.0))
     add(path('M 0 21 Q 23 29 46 17 Q 98 34 150 17 Q 173 29 196 21',
-             stroke='#8b98b0', sw=1.1))
+             stroke='#8fa2c9', sw=2.0))
     for hx in (18, 30, 60, 72, 86, 110, 124, 138, 164, 178):
         top = (21 + (hx / 46) * -4 if hx < 46 else
                (17 + abs(hx - 98) / 52 * 17 if hx < 150 else
                 17 + (196 - hx) / 46 * 4))
-        add(line(hx, top, hx, 38.4, '#8b98b0', 0.55))
-    add(path('M 64 20 L 80 33', stroke='#d94f4f', sw=2.6))
-    add(path('M 118 21 L 102 34', stroke='#d94f4f', sw=2.6))
+        add(line(hx, top, hx, 38.4, '#8fa2c9', 1.1))
+    add(path('M 64 20 L 80 33', stroke='#ff5a4a', sw=3.0))
+    add(path('M 118 21 L 102 34', stroke='#ff5a4a', sw=3.0))
     scene_label('WILL NOT STAY', x + 7, y + 3, 104, 12, 8.5,
                 bold=True, fill=WHITE)
 
@@ -546,13 +565,14 @@ def sc_flags(x, y, w, h):
 def sc_drone(x, y, w, h):
     """Hormuz: grey drone over a fire glow, gold dashed track."""
     add(rect(0, 0, SCENE_W, SCENE_H, 'url(#night)'))
-    add('<ellipse cx="100" cy="47" rx="46" ry="13" fill="url(#fire)"/>')
-    for dx, dy in ((-28, -11), (28, -11), (-28, 11), (28, 11)):
-        add(line(100, 21, 100 + dx, 21 + dy, '#9aa4b8', 1.4))
-        add(circle(100 + dx, 21 + dy, 2.3, '#6f7b90'))
-    add(rect(78, 16, 44, 10, '#9aa4b8', 1.6))
-    add(circle(122, 21, 3.6, '#9aa4b8'))
-    add(rect(84, 18.5, 12, 5, '#6f7b90', 1))
+    add('<ellipse cx="100" cy="47" rx="46" ry="13" fill="url(#fire)" '
+        'stroke="#d9834a" stroke-width="2.4" opacity=".95"/>')
+    for dx, dy in ((-30, -12), (30, -12), (-30, 12), (30, 12)):
+        add(line(100, 21, 100 + dx, 21 + dy, '#9fb4d4', 1.7))
+        add(circle(100 + dx, 21 + dy, 2.6, '#7b879c'))
+    add(rect(76, 15, 48, 12, '#9fb4d4', 2))
+    add(circle(123, 21, 4.2, '#9fb4d4'))
+    add(rect(83, 18.2, 13, 5.6, '#7b879c', 1))
     add(path('M 10 41 Q 58 6 132 27', stroke=GOLD, sw=1.2,
              extra='stroke-dasharray="4 3"'))
 
@@ -821,6 +841,9 @@ def build():
 
     # --- later phases insert more sections here ---
     feature_cards()
+
+    import map_briefs
+    map_briefs.wire()
 
     add('</g></svg>')
     verify()
