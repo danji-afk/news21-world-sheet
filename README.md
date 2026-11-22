@@ -9,8 +9,12 @@ Saturday 21 November 2026: the day's world news on one illustrated page. 36 fact
 ## Run it
 
 ```sh
-node main.ts
+python3 render.py
 ```
+
+Writes a 1024×1024 PNG to `$MAKEFUN_OUTPUT_DIR/entry.png` (default `.`). Needs
+only Python 3, Pillow and cairosvg — no network, no randomness: two runs
+produce byte-identical files.
 
 ---
 
